@@ -1,8 +1,10 @@
 package org.glygen.gws2xlsx;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -19,6 +21,11 @@ import org.glygen.gws2xlsx.model.JobObject;
 import org.glygen.gws2xlsx.model.RegistrationStatus;
 import org.glygen.gws2xlsx.util.GlytoucanUtil;
 import org.glygen.gws2xlsx.util.SequenceUtil;
+import org.json.JSONObject;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class GlytoucanRegistryApp {
     
@@ -56,11 +63,15 @@ public class GlytoucanRegistryApp {
                                glytoucanId = GlytoucanUtil.getInstance().registerGlycan(wurcs);
                                if (glytoucanId == null || glytoucanId.length() > 10) {
                                    glycan.setStatus(RegistrationStatus.NEWLY_SUBMITTED_FOR_REGISTRATION);
+                                   glycan.setGlytoucanHash(glytoucanId);
+                               } else {
+                                   glycan.setGlytoucanID(glytoucanId);
                                }
                            } else {
                                glycan.setStatus(RegistrationStatus.ALREADY_IN_GLYTOUCAN);
+                               glycan.setGlytoucanID(glytoucanId);
                            }
-                           glycan.setGlytoucanID(glytoucanId);
+                           
                        } catch (Exception e) {
                            glycan.setError("Error getting accession number: " + e.getMessage());
                            glycan.setStatus(RegistrationStatus.ERROR);
@@ -79,6 +90,7 @@ public class GlytoucanRegistryApp {
                }
            } catch (Exception e) {
                glycan.setError(e.getMessage());
+               e.printStackTrace();
            }
            count++;
            glycans.add(glycan);
@@ -108,8 +120,42 @@ public class GlytoucanRegistryApp {
         return job;
     }
     
-    public JobObject processJobFile (String jobFile) {
-        JobObject job = new JobObject ();
+    public JobObject processJobFile (String jobFile, Boolean glytoucanGeneration, Boolean cartoonGeneration) throws FileNotFoundException, JsonMappingException, JsonProcessingException {
+        // read json object from file
+        Scanner scanner = new Scanner (new File(jobFile));
+        String json = scanner.nextLine();
+        JSONObject jo = new JSONObject(json);
+        ObjectMapper objectMapper = new ObjectMapper();
+        JobObject job = objectMapper.readValue(jo.toString(), JobObject.class);
+        scanner.close();
+        
+        for (InputFile file: job.getFiles()) {
+            for (GlycanObject glycan: file.getGlycans()) {
+                try {
+                    if (glytoucanGeneration) {
+                        if (glycan.getGlytoucanID() == null || glycan.getStatus() == RegistrationStatus.NEWLY_SUBMITTED_FOR_REGISTRATION) {
+                            if (glycan.getWurcs() != null) {
+                                String errors = GlytoucanUtil.getInstance().validateGlycan(glycan.getWurcs());
+                                if (errors != null) {
+                                    glycan.setError("Validation errors: " + errors);
+                                    glycan.setStatus(RegistrationStatus.ERROR);
+                                    continue;
+                                }
+                                String glytoucanId = GlytoucanUtil.getInstance().getAccessionNumber(glycan.getWurcs());
+                                if (glytoucanId != null && glytoucanId.length() <= 10) {
+                                    glycan.setGlytoucanID(glytoucanId);
+                                    glycan.setStatus(RegistrationStatus.NEWLY_REGISTERED);
+                                }
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    glycan.setStatus(RegistrationStatus.ERROR);
+                    glycan.setError("Could not get glytoucanId (previously registered) : " + e.getMessage());
+                }
+            }
+        }
+        
         return job;
     }
     
@@ -126,7 +172,9 @@ public class GlytoucanRegistryApp {
         Cell cell4 = header.createCell(3, CellType.BLANK);
         cell4.setCellValue("Cartoon");
         Cell cell5 = header.createCell(4, CellType.STRING);
-        cell5.setCellValue("Error");
+        cell5.setCellValue("Status");
+        Cell cell6 = header.createCell(5, CellType.STRING);
+        cell6.setCellValue("Error");
         
         int row = 1;
         Cell cell = null;
@@ -142,8 +190,13 @@ public class GlytoucanRegistryApp {
                 cell = r.createCell(3, CellType.BLANK);
                 addCartoon (cell, glycan.getCartoon());
                 cell = r.createCell(4, CellType.STRING);
+                if (glycan.getStatus() == RegistrationStatus.NONE) {
+                    cell.setCellValue("");
+                } else {
+                    cell.setCellValue(glycan.getStatus().name());
+                }
+                cell = r.createCell(5, CellType.STRING);
                 cell.setCellValue(glycan.getError());
-                row++;
             }
         }
         
@@ -159,4 +212,11 @@ public class GlytoucanRegistryApp {
         
     }
 
+    public void saveJob(JobObject job, String jobFile) throws JsonProcessingException, FileNotFoundException {
+        ObjectMapper mapper = new ObjectMapper();         
+        String json = mapper.writeValueAsString(job);
+        PrintWriter out = new PrintWriter(new File (jobFile));
+        out.append(json);
+        out.close();
+    }
 }

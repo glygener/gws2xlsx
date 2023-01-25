@@ -1,7 +1,10 @@
 package org.glygen.gws2xlsx;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
+import java.util.Properties;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -12,6 +15,9 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.glygen.gws2xlsx.model.InputFile;
 import org.glygen.gws2xlsx.model.JobObject;
+import org.glygen.gws2xlsx.util.GlytoucanUtil;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 public class App {
     
@@ -26,33 +32,45 @@ public class App {
             return;
         }
         
+        Properties prop;
+        try {
+            prop = App.loadRegistryProperties();
+            // settings for GlytoucanUtil
+            GlytoucanUtil.getInstance().setApiKey(prop.getProperty("glytoucan_api_key"));
+            GlytoucanUtil.getInstance().setUserId(prop.getProperty("glytoucan_user"));
+        } catch (IOException e1) {
+            System.err.println ("Error loading properties file " + e1.getMessage());
+            System.exit(1);
+        }
+        
         GlytoucanRegistryApp registry = new GlytoucanRegistryApp();
+        JobObject job = null;
         if (arguments.getGwsFile() != null) {
             try {
-                JobObject job = new JobObject();
+                job = new JobObject();
                 InputFile processed = registry.processSingleFile(arguments.getGwsFile(), arguments.glytoucanGeneration, arguments.getCartoonGeneration());
                 job.addFile(processed);
-                registry.writeIntoExcel(job, arguments.getOutputFolder());
             } catch (Exception e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         } else if (arguments.getInputFolder() != null) {
-            JobObject job = registry.processInputFolder(arguments.getInputFolder(), arguments.getGlytoucanGeneration(), arguments.getCartoonGeneration());
-            try {
-                registry.writeIntoExcel(job, arguments.getOutputFolder());
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
+            job = registry.processInputFolder(arguments.getInputFolder(), arguments.getGlytoucanGeneration(), arguments.getCartoonGeneration());
         } else if (arguments.getJobFile() != null) {
-            JobObject job = registry.processJobFile(arguments.getJobFile());
             try {
-                registry.writeIntoExcel(job, arguments.getOutputFolder());
-            } catch (IOException e) {
+                job = registry.processJobFile(arguments.getJobFile(), arguments.getGlytoucanGeneration(), arguments.getCartoonGeneration());
+            } catch (JsonProcessingException | FileNotFoundException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
+        }
+        
+        try {
+            registry.saveJob (job, arguments.getOutputFolder() + File.separator + "job" + System.currentTimeMillis() + ".json");
+            registry.writeIntoExcel(job, arguments.getOutputFolder());
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         }
     }
 
@@ -226,7 +244,7 @@ public class App {
         t_option.setRequired(false);
         t_options.addOption(t_option);
         // writing geneless
-        t_option = new Option("o", "output", true, "Output folder that will contain the excel sheet.");
+        t_option = new Option("o", "output", true, "Output folder for the excel file and job files");
         t_option.setArgs(1);
         t_option.setRequired(true);
         t_options.addOption(t_option);
@@ -236,6 +254,25 @@ public class App {
         t_option.setRequired(false);
         t_options.addOption(t_option);
         return t_options;
+    }
+    
+    /**
+     * Load the input parameter from a properties file.
+     *
+     * @return Properties object with the values from the file
+     * @throws Exception
+     *             If the loading of the properties file fails
+     */
+    public static Properties loadRegistryProperties() throws IOException
+    {
+        // open the file
+        FileReader t_reader = new FileReader("registry.properties");
+        // read properties
+        Properties t_properties = new Properties();
+        t_properties.load(t_reader);
+        // close file
+        t_reader.close();
+        return t_properties;
     }
     
     

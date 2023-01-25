@@ -2,13 +2,14 @@ package org.glygen.gws2xlsx.model;
 
 public class GlycanObject {
     Integer rowNumber;
-    RegistrationStatus status;
+    RegistrationStatus status = RegistrationStatus.NONE;
     String gwsSequence;
     String glycoCT;
     String wurcs;
     String error;
     byte[] cartoon;
     String glytoucanID;
+    String glytoucanHash;
     
     /**
      * @return the status
@@ -105,6 +106,18 @@ public class GlycanObject {
      */
     public void setGlytoucanID(String glytoucanID) {
         this.glytoucanID = glytoucanID;
+    }
+    /**
+     * @return the glytoucanHash
+     */
+    public String getGlytoucanHash() {
+        return glytoucanHash;
+    }
+    /**
+     * @param glytoucanHash the glytoucanHash to set
+     */
+    public void setGlytoucanHash(String glytoucanHash) {
+        this.glytoucanHash = glytoucanHash;
     }
 
 }

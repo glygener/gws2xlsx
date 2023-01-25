@@ -34,16 +34,23 @@ public class SequenceUtil {
             glycanWorkspace.setNotation(GraphicOptions.NOTATION_SNFG);
     }
     
-    public static String parseGWSIntoWURCS (String sequence) throws GlycoVisitorException, SugarImporterException, WURCSException {
+    public static String parseGWSIntoWURCS (String sequence) throws Exception  {
         String wurcsSequence = null;
         FixGlycoCtUtil fixGlycoCT = new FixGlycoCtUtil();
-        Glycan glycanObject = Glycan.fromString(sequence.trim());
-        String glycoCT = glycanObject.toGlycoCTCondensed();
-        glycoCT = fixGlycoCT.fixGlycoCT(glycoCT);
-        
-        WURCSExporterGlycoCT exporter = new WURCSExporterGlycoCT();
-        exporter.start(glycoCT);
-        wurcsSequence = exporter.getWURCS(); 
+        try {
+            Glycan glycanObject = Glycan.fromString(sequence.trim());
+            String glycoCT = glycanObject.toGlycoCTCondensed();
+            glycoCT = fixGlycoCT.fixGlycoCT(glycoCT);
+            try {
+                WURCSExporterGlycoCT exporter = new WURCSExporterGlycoCT();
+                exporter.start(glycoCT);
+                wurcsSequence = exporter.getWURCS();
+            } catch (Exception e) {
+                throw new WURCSException("Error converting " + glycoCT + " wurcs. Reason: " + e.getMessage());
+            }
+        } catch (GlycoVisitorException e) {
+            throw e;
+        } 
             
         return wurcsSequence;
     }
