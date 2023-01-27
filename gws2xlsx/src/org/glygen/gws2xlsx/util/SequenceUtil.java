@@ -46,7 +46,7 @@ public class SequenceUtil {
                 exporter.start(glycoCT);
                 wurcsSequence = exporter.getWURCS();
             } catch (Exception e) {
-                throw new WURCSException("Error converting " + glycoCT + " wurcs. Reason: " + e.getMessage());
+                throw new WURCSException("Error converting " + glycoCT + " to WURCS. Reason: " + e.getMessage());
             }
         } catch (GlycoVisitorException e) {
             throw e;

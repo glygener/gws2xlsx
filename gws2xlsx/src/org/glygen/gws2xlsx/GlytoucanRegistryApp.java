@@ -282,7 +282,7 @@ public class GlytoucanRegistryApp {
         return maxImageWidth;
     }
 
-    private void addCartoon(Drawing drawing, Workbook workbook, Cell cell, byte[] cartoon) {
+    private void addCartoon(Drawing<?> drawing, Workbook workbook, Cell cell, byte[] cartoon) {
         CreationHelper m_creationHelper = workbook.getCreationHelper();
         int t_pictureIndex = workbook.addPicture(cartoon,
                 Workbook.PICTURE_TYPE_PNG);
