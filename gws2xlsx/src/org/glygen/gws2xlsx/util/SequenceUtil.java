@@ -3,18 +3,24 @@ package org.glygen.gws2xlsx.util;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 
 import javax.imageio.ImageIO;
 
 import org.apache.commons.io.IOUtils;
 import org.eurocarbdb.MolecularFramework.io.SugarImporterException;
+import org.eurocarbdb.MolecularFramework.io.GlycoCT.SugarImporterGlycoCTCondensed;
+import org.eurocarbdb.MolecularFramework.sugar.Sugar;
+import org.eurocarbdb.MolecularFramework.util.validation.GlycoVisitorValidation;
 import org.eurocarbdb.MolecularFramework.util.visitor.GlycoVisitorException;
 import org.eurocarbdb.application.glycanbuilder.BuilderWorkspace;
 import org.eurocarbdb.application.glycanbuilder.Glycan;
 import org.eurocarbdb.application.glycanbuilder.renderutil.GlycanRendererAWT;
 import org.eurocarbdb.application.glycanbuilder.util.GraphicOptions;
+import org.glycoinfo.WURCSFramework.io.GlycoCT.GlycoVisitorValidationForWURCS;
 import org.glycoinfo.WURCSFramework.io.GlycoCT.WURCSExporterGlycoCT;
 import org.glycoinfo.WURCSFramework.util.WURCSException;
+import org.glygen.gws2xlsx.model.GlycanObject;
 
 public class SequenceUtil {
     
@@ -34,25 +40,29 @@ public class SequenceUtil {
             glycanWorkspace.setNotation(GraphicOptions.NOTATION_SNFG);
     }
     
-    public static String parseGWSIntoWURCS (String sequence) throws Exception  {
+    public static void parseGWSIntoWURCS (GlycanObject glycan) throws Exception  {
         String wurcsSequence = null;
         FixGlycoCtUtil fixGlycoCT = new FixGlycoCtUtil();
         try {
-            Glycan glycanObject = Glycan.fromString(sequence.trim());
+            Glycan glycanObject = Glycan.fromString(glycan.getGwsSequence().trim());
             String glycoCT = glycanObject.toGlycoCTCondensed();
             glycoCT = fixGlycoCT.fixGlycoCT(glycoCT);
+            glycan.setGlycoCT(glycoCT);
             try {
                 WURCSExporterGlycoCT exporter = new WURCSExporterGlycoCT();
                 exporter.start(glycoCT);
                 wurcsSequence = exporter.getWURCS();
+                glycan.setWurcs(wurcsSequence);
             } catch (Exception e) {
-                throw new WURCSException("Error converting " + glycoCT + " to WURCS. Reason: " + e.getMessage());
+                // run the validator to get the detailed error messages
+                String errorMessage = validGlycoCT(glycoCT);
+                if (!errorMessage.isEmpty()) {
+                    throw new WURCSException("Error converting " + glycoCT + " to WURCS, validation errors: " + errorMessage);
+                }
             }
         } catch (GlycoVisitorException e) {
             throw e;
         } 
-            
-        return wurcsSequence;
     }
     
     public static byte[] getCartoon (String gwsSequence) throws IOException {
@@ -68,5 +78,34 @@ public class SequenceUtil {
             return bytes;
         }
         return null;
+    }
+    
+    private static String validGlycoCT(String glycoCT)
+            throws SugarImporterException, GlycoVisitorException
+    {
+        StringBuffer errorMessage = new StringBuffer();
+        // parse the GlycoCT and create sugar object
+        SugarImporterGlycoCTCondensed t_importerGlycoCT = new SugarImporterGlycoCTCondensed();
+        Sugar t_sugar = t_importerGlycoCT.parse(glycoCT);
+
+        // Validate sugar with GlycoCT validator
+        GlycoVisitorValidation t_validation = new GlycoVisitorValidation();
+        t_validation.start(t_sugar);
+        
+        // Remove error "Sugar has more than one root residue."
+        for (String t_string : t_validation.getErrors()) {
+            if (!t_string.equals("Sugar has more than one root residue.")) {
+                errorMessage.append(t_string + "\n");
+            }
+        }
+        
+        // Validate for WURCS
+        GlycoVisitorValidationForWURCS t_validationWURCS = new GlycoVisitorValidationForWURCS();
+        t_validationWURCS.start(t_sugar);
+        for (String error: t_validationWURCS.getErrors()) {
+            errorMessage.append(error + "\n");
+           
+        }
+        return errorMessage.toString();
     }
 }

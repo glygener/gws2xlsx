@@ -8,6 +8,7 @@ public class AppArguments {
     String jobFile;
     Boolean cartoonGeneration;
     Boolean glytoucanGeneration;
+    Boolean debug;
     /**
      * @return the gwsFile
      */
@@ -79,6 +80,18 @@ public class AppArguments {
      */
     public void setGlytoucanGeneration(Boolean glytoucanGeneration) {
         this.glytoucanGeneration = glytoucanGeneration;
+    }
+    /**
+     * @return the debug
+     */
+    public Boolean getDebug() {
+        return debug;
+    }
+    /**
+     * @param debug the debug to set
+     */
+    public void setDebug(Boolean debug) {
+        this.debug = debug;
     }
     
     

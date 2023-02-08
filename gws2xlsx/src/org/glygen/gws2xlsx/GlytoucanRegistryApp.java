@@ -47,7 +47,7 @@ public class GlytoucanRegistryApp {
     private static final Double IMAGE_CELL_WIDTH_FACTOR = 36.55D;
     private static final Double IMAGE_CELL_HEIGHT_FACTOR = 0.76D;
 
-    public InputFile processSingleFile (String gwsFile, Boolean glytoucanGeneration, Boolean cartoonGeneration) throws Exception {
+    public InputFile processSingleFile (String gwsFile, Boolean glytoucanGeneration, Boolean cartoonGeneration, Boolean debug) throws Exception {
        InputFile processed = new InputFile();
        processed.setFilename(gwsFile);
        List<GlycanObject> glycans = new ArrayList<>();
@@ -62,41 +62,42 @@ public class GlytoucanRegistryApp {
            glycan.setRowNumber(count+1);
            try {
                if (glytoucanGeneration) {
-                   String wurcs = SequenceUtil.parseGWSIntoWURCS(sequence);
-                   glycan.setWurcs(wurcs);
-                   if (wurcs != null) {
+                   SequenceUtil.parseGWSIntoWURCS(glycan);
+                   if (glycan.getWurcs() != null) {
                        try {
                            // validate first to get errors if any
-                           String errors = GlytoucanUtil.getInstance().validateGlycan(wurcs);
+                           String errors = GlytoucanUtil.getInstance().validateGlycan(glycan.getWurcs());
                            if (errors != null) {
                                glycan.setError("Validation errors: " + errors);
-                               glycan.setStatus(RegistrationStatus.ERROR);
+                               if (!debug) glycan.setStatus(RegistrationStatus.ERROR);
                                glycans.add(glycan);
                                count++;
                                continue;
                            }
-                           String glytoucanId = GlytoucanUtil.getInstance().getAccessionNumber(wurcs);
-                           if (glytoucanId == null) {
-                               glycan.setStatus(RegistrationStatus.NEWLY_REGISTERED);
-                               glytoucanId = GlytoucanUtil.getInstance().registerGlycan(wurcs);
-                               if (glytoucanId == null || glytoucanId.length() > 10) {
-                                   glycan.setStatus(RegistrationStatus.NEWLY_SUBMITTED_FOR_REGISTRATION);
-                                   glycan.setGlytoucanHash(glytoucanId);
+                           if (!debug) {
+                               String glytoucanId = GlytoucanUtil.getInstance().getAccessionNumber(glycan.getWurcs());
+                               if (glytoucanId == null) {
+                                   glycan.setStatus(RegistrationStatus.NEWLY_REGISTERED);
+                                   glytoucanId = GlytoucanUtil.getInstance().registerGlycan(glycan.getWurcs());
+                                   if (glytoucanId == null || glytoucanId.length() > 10) {
+                                       glycan.setStatus(RegistrationStatus.NEWLY_SUBMITTED_FOR_REGISTRATION);
+                                       glycan.setGlytoucanHash(glytoucanId);
+                                   } else {
+                                       glycan.setGlytoucanID(glytoucanId);
+                                   }
+                                   
                                } else {
+                                   glycan.setStatus(RegistrationStatus.ALREADY_IN_GLYTOUCAN);
                                    glycan.setGlytoucanID(glytoucanId);
                                }
-                           } else {
-                               glycan.setStatus(RegistrationStatus.ALREADY_IN_GLYTOUCAN);
-                               glycan.setGlytoucanID(glytoucanId);
-                           }
-                           
+                           } 
                        } catch (Exception e) {
                            glycan.setError("Error getting accession number: " + e.getMessage());
-                           glycan.setStatus(RegistrationStatus.ERROR);
+                           if (!debug) glycan.setStatus(RegistrationStatus.ERROR);
                        }
                    } else {
                        glycan.setError("Could not convert to WURCS");
-                       glycan.setStatus(RegistrationStatus.ERROR);
+                       if (!debug) glycan.setStatus(RegistrationStatus.ERROR);
                    }
                }
                if (cartoonGeneration) {
@@ -108,6 +109,7 @@ public class GlytoucanRegistryApp {
                }
            } catch (Exception e) {
                glycan.setError(e.getMessage());
+               if (!debug) glycan.setStatus(RegistrationStatus.ERROR);
                e.printStackTrace();
            }
            count++;
@@ -119,14 +121,14 @@ public class GlytoucanRegistryApp {
        return processed;
     }
     
-    public JobObject processInputFolder (String inputFolder, Boolean glytoucanGeneration, Boolean cartoonGeneration) {
+    public JobObject processInputFolder (String inputFolder, Boolean glytoucanGeneration, Boolean cartoonGeneration, Boolean debug) {
         JobObject job = new JobObject ();
         
         File folder = new File (inputFolder);
         if (folder.exists() && folder.isDirectory()) {
             for (File f: folder.listFiles()) {
                 try {
-                    InputFile processed = processSingleFile(f.getAbsolutePath(), glytoucanGeneration, cartoonGeneration);
+                    InputFile processed = processSingleFile(f.getAbsolutePath(), glytoucanGeneration, cartoonGeneration, debug);
                     if (processed != null) {
                         job.addFile(processed);
                     }
@@ -184,7 +186,7 @@ public class GlytoucanRegistryApp {
         return job;
     }
     
-    public void writeIntoExcel (JobObject processed, String outputFolder) throws IOException {
+    public void writeIntoExcel (JobObject processed, String outputFolder, Boolean debug) throws IOException {
         Workbook workbook = new XSSFWorkbook();
      // headline font
         Font fontHeadline = workbook.createFont();
@@ -202,34 +204,42 @@ public class GlytoucanRegistryApp {
         Sheet sheet = workbook.createSheet("Glycans");
         Drawing<?> drawing = sheet.createDrawingPatriarch();
         Row header = sheet.createRow(0);
-        Cell cell1 = header.createCell(0, CellType.STRING);
-        cell1.setCellValue("File name");
-        cell1.setCellStyle(cellStyleHeadline);
-        Cell cell2 = header.createCell(1, CellType.NUMERIC);
-        cell2.setCellValue("Row number in file");
-        cell2.setCellStyle(cellStyleHeadline);
-        Cell cell3 = header.createCell(2, CellType.STRING);
-        cell3.setCellValue("Glytoucan ID");
-        cell3.setCellStyle(cellStyleHeadline);
-        Cell cell4 = header.createCell(3, CellType.BLANK);
-        cell4.setCellValue("Cartoon");
-        cell4.setCellStyle(cellStyleHeadline);
-        Cell cell5 = header.createCell(4, CellType.STRING);
-        cell5.setCellValue("Status");
-        cell5.setCellStyle(cellStyleHeadline);
-        Cell cell6 = header.createCell(5, CellType.STRING);
-        cell6.setCellValue("Error");
-        cell6.setCellStyle(cellStyleHeadline);
+        Cell cell = header.createCell(0, CellType.STRING);
+        cell.setCellValue("File name");
+        cell.setCellStyle(cellStyleHeadline);
+        cell = header.createCell(1, CellType.NUMERIC);
+        cell.setCellValue("Row number in file");
+        cell.setCellStyle(cellStyleHeadline);
+        cell = header.createCell(2, CellType.STRING);
+        cell.setCellValue("Glytoucan ID");
+        cell.setCellStyle(cellStyleHeadline);
+        cell = header.createCell(3, CellType.BLANK);
+        cell.setCellValue("Cartoon");
+        cell.setCellStyle(cellStyleHeadline);
+        cell = header.createCell(4, CellType.STRING);
+        cell.setCellValue("Status");
+        cell.setCellStyle(cellStyleHeadline);
+        cell = header.createCell(5, CellType.STRING);
+        cell.setCellValue("Error");
+        cell.setCellStyle(cellStyleHeadline);
+        if (debug) {
+            cell = header.createCell(6, CellType.STRING);
+            cell.setCellValue("GlycoCT");
+            cell.setCellStyle(cellStyleHeadline);
+            cell = header.createCell(7, CellType.STRING);
+            cell.setCellValue("WURCS");
+            cell.setCellStyle(cellStyleHeadline);
+        }
         
         int maxImageWidth = determineMaxColumnWidth (processed);
         sheet.setColumnWidth(3, (int) (maxImageWidth * IMAGE_CELL_WIDTH_FACTOR));
         int row = 1;
-        Cell cell = null;
         for (InputFile file: processed.getFiles()) {
+            String filename = file.getFilename().substring(file.getFilename().lastIndexOf(File.separator)+1);
             for (GlycanObject glycan: file.getGlycans()) {
                 Row r = sheet.createRow(row++);
                 cell = r.createCell(0, CellType.STRING);
-                cell.setCellValue(file.getFilename());
+                cell.setCellValue(filename);
                 cell = r.createCell(1, CellType.NUMERIC);
                 cell.setCellValue(glycan.getRowNumber());
                 cell = r.createCell(2, CellType.STRING);
@@ -251,6 +261,12 @@ public class GlytoucanRegistryApp {
                 }
                 cell = r.createCell(5, CellType.STRING);
                 cell.setCellValue(glycan.getError());
+                if (debug) {
+                    cell = r.createCell(6, CellType.STRING);
+                    cell.setCellValue(glycan.getGlycoCT());
+                    cell = r.createCell(7, CellType.STRING);
+                    cell.setCellValue(glycan.getWurcs());
+                }
             }
         }
         
@@ -272,10 +288,12 @@ public class GlytoucanRegistryApp {
         for (InputFile file: processed.getFiles()) {
             for (GlycanObject glycan: file.getGlycans()) {
              // convert byte[] back to a BufferedImage
-                InputStream is = new ByteArrayInputStream(glycan.getCartoon());
-                BufferedImage newBi = ImageIO.read(is);
-                if (newBi.getWidth() > maxImageWidth) {
-                    maxImageWidth = newBi.getWidth();
+                if (glycan.getCartoon() != null) {
+                    InputStream is = new ByteArrayInputStream(glycan.getCartoon());
+                    BufferedImage newBi = ImageIO.read(is);
+                    if (newBi.getWidth() > maxImageWidth) {
+                        maxImageWidth = newBi.getWidth();
+                    }
                 }
             }
         }

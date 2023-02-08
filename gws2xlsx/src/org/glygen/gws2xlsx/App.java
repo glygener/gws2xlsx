@@ -48,14 +48,14 @@ public class App {
         if (arguments.getGwsFile() != null) {
             try {
                 job = new JobObject();
-                InputFile processed = registry.processSingleFile(arguments.getGwsFile(), arguments.glytoucanGeneration, arguments.getCartoonGeneration());
+                InputFile processed = registry.processSingleFile(arguments.getGwsFile(), arguments.glytoucanGeneration, arguments.getCartoonGeneration(), arguments.getDebug());
                 job.addFile(processed);
             } catch (Exception e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         } else if (arguments.getInputFolder() != null) {
-            job = registry.processInputFolder(arguments.getInputFolder(), arguments.getGlytoucanGeneration(), arguments.getCartoonGeneration());
+            job = registry.processInputFolder(arguments.getInputFolder(), arguments.getGlytoucanGeneration(), arguments.getCartoonGeneration(), arguments.getDebug());
         } else if (arguments.getJobFile() != null) {
             try {
                 job = registry.processJobFile(arguments.getJobFile(), arguments.getGlytoucanGeneration(), arguments.getCartoonGeneration());
@@ -67,7 +67,7 @@ public class App {
         
         try {
             registry.saveJob (job, arguments.getOutputFolder() + File.separator + "job" + System.currentTimeMillis() + ".json");
-            registry.writeIntoExcel(job, arguments.getOutputFolder());
+            registry.writeIntoExcel(job, arguments.getOutputFolder(), arguments.debug);
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -124,6 +124,7 @@ public class App {
         arguments.setJobFile(commandLine.getOptionValue("j"));
         arguments.setGlytoucanGeneration(commandLine.hasOption("g"));
         arguments.setCartoonGeneration(commandLine.hasOption("c"));
+        arguments.setDebug(commandLine.hasOption("i"));
         // check settings
         if (!App.checkArguments(arguments))
         {
@@ -232,18 +233,24 @@ public class App {
         t_option.setArgs(1);
         t_option.setRequired(false);
         t_options.addOption(t_option);
-        // properties file
+ 
         t_option = new Option("g", "glytoucanid", false,
                 "GlyTouCan ID generation.");
         t_option.setArgs(0);
         t_option.setRequired(false);
         t_options.addOption(t_option);
-        // mapping folder
+        
         t_option = new Option("c", "cartoon", false, "Cartoon generation.");
         t_option.setArgs(0);
         t_option.setRequired(false);
         t_options.addOption(t_option);
-        // writing geneless
+        
+        t_option = new Option("i", "debug", false, "generate debug information");
+        t_option.setArgs(0);
+        t_option.setRequired(false);
+        t_options.addOption(t_option);
+ 
+ 
         t_option = new Option("o", "output", true, "Output folder for the excel file and job files");
         t_option.setArgs(1);
         t_option.setRequired(true);
