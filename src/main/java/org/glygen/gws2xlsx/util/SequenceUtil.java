@@ -3,11 +3,9 @@ package org.glygen.gws2xlsx.util;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 
 import javax.imageio.ImageIO;
 
-import org.apache.commons.io.IOUtils;
 import org.eurocarbdb.MolecularFramework.io.SugarImporterException;
 import org.eurocarbdb.MolecularFramework.io.GlycoCT.SugarImporterGlycoCTCondensed;
 import org.eurocarbdb.MolecularFramework.sugar.Sugar;
@@ -21,6 +19,7 @@ import org.glycoinfo.WURCSFramework.io.GlycoCT.GlycoVisitorValidationForWURCS;
 import org.glycoinfo.WURCSFramework.io.GlycoCT.WURCSExporterGlycoCT;
 import org.glycoinfo.WURCSFramework.util.WURCSException;
 import org.glygen.gws2xlsx.model.GlycanObject;
+import org.glygen.gws2xlsx.rectify.RectifyGlycoCT;
 
 public class SequenceUtil {
     
@@ -47,6 +46,8 @@ public class SequenceUtil {
             Glycan glycanObject = Glycan.fromString(glycan.getGwsSequence().trim());
             String glycoCT = glycanObject.toGlycoCTCondensed();
             glycoCT = fixGlycoCT.fixGlycoCT(glycoCT);
+            RectifyGlycoCT t_rectifier = new RectifyGlycoCT();
+            glycoCT = t_rectifier.rectify(glycoCT);
             glycan.setGlycoCT(glycoCT);
             try {
                 WURCSExporterGlycoCT exporter = new WURCSExporterGlycoCT();
