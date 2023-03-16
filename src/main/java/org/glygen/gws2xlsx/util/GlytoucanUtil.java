@@ -1,13 +1,24 @@
 package org.glygen.gws2xlsx.util;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.net.URL;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.imageio.ImageIO;
+
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.io.IOUtils;
 import org.eurocarbdb.MolecularFramework.sugar.Sugar;
 import org.glycoinfo.GlycanFormatconverter.Glycan.GlyContainer;
 import org.glycoinfo.GlycanFormatconverter.io.GlycoCT.GlyContainerToSugar;
@@ -39,6 +50,7 @@ public class GlytoucanUtil {
 	static String registerURL = "https://api.glytoucan.org/glycan/register";
 	static String validateURL = "wurcsframework/wurcsvalidator/1.0.1/";
 	static String apiURL = "https://api.glycosmos.org/";
+	static String imageURL = "https://api.glycosmos.org/wurcs2image/latest/png/binary/";	    
 	
 	private static RestTemplate restTemplate = new RestTemplate();
 	
@@ -123,6 +135,18 @@ public class GlytoucanUtil {
 		
 		
 		return accessionNumber;
+	}
+	
+	public byte[] getGlytoucanImage (String glytoucanId) {
+	    try {
+	        BufferedImage image = ImageIO.read(new URL(imageURL + glytoucanId));
+	        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ImageIO.write(image, "png", baos);
+            return baos.toByteArray();
+	    } catch (IOException e) {
+            logger.error("Exception retrieving glycan image" + e.getMessage());
+        } 
+	    return null;
 	}
 	
 	/**

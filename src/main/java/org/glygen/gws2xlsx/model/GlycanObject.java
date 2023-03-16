@@ -8,6 +8,7 @@ public class GlycanObject {
     String wurcs;
     String error;
     byte[] cartoon;
+    byte[] glytoucanImage;
     String glytoucanID;
     String glytoucanHash;
     
@@ -118,6 +119,18 @@ public class GlycanObject {
      */
     public void setGlytoucanHash(String glytoucanHash) {
         this.glytoucanHash = glytoucanHash;
+    }
+    /**
+     * @return the glytoucanImage
+     */
+    public byte[] getGlytoucanImage() {
+        return glytoucanImage;
+    }
+    /**
+     * @param glytoucanImage the glytoucanImage to set
+     */
+    public void setGlytoucanImage(byte[] glytoucanImage) {
+        this.glytoucanImage = glytoucanImage;
     }
 
 }

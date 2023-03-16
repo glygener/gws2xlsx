@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Scanner;
 
@@ -103,6 +104,8 @@ public class GlytoucanRegistryApp {
                if (cartoonGeneration) {
                    try {    
                        glycan.setCartoon(SequenceUtil.getCartoon(sequence));
+                       if (glycan.getGlytoucanID() != null)
+                           glycan.setGlytoucanImage(GlytoucanUtil.getInstance().getGlytoucanImage(glycan.getGlytoucanID()));
                    } catch (Exception e) {
                        System.out.println ("Cannot generate image for " + (count+1));
                    } 
@@ -172,6 +175,8 @@ public class GlytoucanRegistryApp {
                     if (cartoonGeneration) {
                         try {    
                             glycan.setCartoon(SequenceUtil.getCartoon(glycan.getGwsSequence()));
+                            if (glycan.getGlytoucanID() != null)
+                                glycan.setGlytoucanImage(GlytoucanUtil.getInstance().getGlytoucanImage(glycan.getGlytoucanID()));
                         } catch (Exception e) {
                             System.out.println ("Cannot generate image for " + glycan.getRowNumber());
                         } 
@@ -203,6 +208,7 @@ public class GlytoucanRegistryApp {
         cellStyleTextMiddle.setVerticalAlignment(VerticalAlignment.CENTER);
         Sheet sheet = workbook.createSheet("Glycans");
         Drawing<?> drawing = sheet.createDrawingPatriarch();
+        int columnCount = 7;
         Row header = sheet.createRow(0);
         Cell cell = header.createCell(0, CellType.STRING);
         cell.setCellValue("File name");
@@ -216,27 +222,64 @@ public class GlytoucanRegistryApp {
         cell = header.createCell(3, CellType.BLANK);
         cell.setCellValue("Cartoon");
         cell.setCellStyle(cellStyleHeadline);
-        cell = header.createCell(4, CellType.STRING);
-        cell.setCellValue("Status");
+        cell = header.createCell(4, CellType.BLANK);
+        cell.setCellValue("Glytoucan Image");
         cell.setCellStyle(cellStyleHeadline);
         cell = header.createCell(5, CellType.STRING);
+        cell.setCellValue("Status");
+        cell.setCellStyle(cellStyleHeadline);
+        cell = header.createCell(6, CellType.STRING);
         cell.setCellValue("Error");
         cell.setCellStyle(cellStyleHeadline);
         if (debug) {
-            cell = header.createCell(6, CellType.STRING);
+            cell = header.createCell(7, CellType.STRING);
             cell.setCellValue("GlycoCT");
             cell.setCellStyle(cellStyleHeadline);
-            cell = header.createCell(7, CellType.STRING);
+            cell = header.createCell(8, CellType.STRING);
             cell.setCellValue("WURCS");
             cell.setCellStyle(cellStyleHeadline);
-        }
+            columnCount = 9;
+        } 
+        
+        cell = header.createCell(columnCount++, CellType.STRING);
+        cell.setCellValue("Paper");
+        cell.setCellStyle(cellStyleHeadline);
+        cell = header.createCell(columnCount++, CellType.STRING);
+        cell.setCellValue("Species");
+        cell.setCellStyle(cellStyleHeadline);
+        cell = header.createCell(columnCount++, CellType.STRING);
+        cell.setCellValue("Tissue");
+        cell.setCellStyle(cellStyleHeadline);
+        cell = header.createCell(columnCount++, CellType.STRING);
+        cell.setCellValue("Cell line ID");
+        cell.setCellStyle(cellStyleHeadline);
+        cell = header.createCell(columnCount++, CellType.STRING);
+        cell.setCellValue("Disease");
+        cell.setCellStyle(cellStyleHeadline);
+        cell = header.createCell(columnCount++, CellType.STRING);
+        cell.setCellValue("has_abundance");
+        cell.setCellStyle(cellStyleHeadline);
+        cell = header.createCell(columnCount++, CellType.STRING);
+        cell.setCellValue("has_expression");
+        cell.setCellStyle(cellStyleHeadline);
+        cell = header.createCell(columnCount++, CellType.STRING);
+        cell.setCellValue("Functional annotation/Keyword");
+        cell.setCellStyle(cellStyleHeadline);
+        cell = header.createCell(columnCount++, CellType.STRING);
+        cell.setCellValue("Glycan dictionary term ID");
+        cell.setCellStyle(cellStyleHeadline);
+        cell = header.createCell(columnCount++, CellType.STRING);
+        cell.setCellValue("Contributor");
+        cell.setCellStyle(cellStyleHeadline);
         
         int maxImageWidth = determineMaxColumnWidth (processed);
         sheet.setColumnWidth(3, (int) (maxImageWidth * IMAGE_CELL_WIDTH_FACTOR));
+        sheet.setColumnWidth(4, (int) (maxImageWidth * IMAGE_CELL_WIDTH_FACTOR));
         int row = 1;
         for (InputFile file: processed.getFiles()) {
             String filename = file.getFilename().substring(file.getFilename().lastIndexOf(File.separator)+1);
             for (GlycanObject glycan: file.getGlycans()) {
+                columnCount = 7;
                 Row r = sheet.createRow(row++);
                 cell = r.createCell(0, CellType.STRING);
                 cell.setCellValue(filename);
@@ -253,20 +296,41 @@ public class GlytoucanRegistryApp {
                     r.setHeightInPoints((int) (newBi.getHeight() * IMAGE_CELL_HEIGHT_FACTOR) + 1);
                     addCartoon (drawing, workbook, cell, glycan.getCartoon());
                 }
-                cell = r.createCell(4, CellType.STRING);
+                cell = r.createCell(4, CellType.BLANK);
+                if (glycan.getGlytoucanImage() != null) {
+                    InputStream is = new ByteArrayInputStream(glycan.getGlytoucanImage());
+                    BufferedImage newBi = ImageIO.read(is);
+                    r.setHeightInPoints((int) (newBi.getHeight() * IMAGE_CELL_HEIGHT_FACTOR) + 1);
+                    addCartoon (drawing, workbook, cell, glycan.getGlytoucanImage());
+                }
+                cell = r.createCell(5, CellType.STRING);
                 if (glycan.getStatus() == RegistrationStatus.NONE) {
                     cell.setCellValue("");
                 } else {
                     cell.setCellValue(glycan.getStatus().name());
                 }
-                cell = r.createCell(5, CellType.STRING);
+                cell = r.createCell(6, CellType.STRING);
                 cell.setCellValue(glycan.getError());
                 if (debug) {
-                    cell = r.createCell(6, CellType.STRING);
-                    cell.setCellValue(glycan.getGlycoCT());
                     cell = r.createCell(7, CellType.STRING);
+                    cell.setCellValue(glycan.getGlycoCT());
+                    cell = r.createCell(8, CellType.STRING);
                     cell.setCellValue(glycan.getWurcs());
+                    columnCount = 9;
                 }
+                cell = r.createCell(columnCount++, CellType.STRING);
+                cell = r.createCell(columnCount++, CellType.STRING);
+                cell = r.createCell(columnCount++, CellType.STRING);
+                cell = r.createCell(columnCount++, CellType.STRING);
+                cell = r.createCell(columnCount++, CellType.STRING);
+                cell = r.createCell(columnCount++, CellType.STRING);
+                cell.setCellValue("no");
+                cell = r.createCell(columnCount++, CellType.STRING);
+                cell.setCellValue("no");
+                cell = r.createCell(columnCount++, CellType.STRING);
+                cell = r.createCell(columnCount++, CellType.STRING);
+                cell = r.createCell(columnCount++, CellType.STRING);
+                cell.setCellValue("createdBy:Mindy Porterfield(mindyp@ccrc.uga.edu, CCRC)");
             }
         }
         
@@ -276,7 +340,7 @@ public class GlytoucanRegistryApp {
         sheet.autoSizeColumn(4);
         sheet.autoSizeColumn(5);
         
-        String outputFile = outputFolder + File.separator + "Glycans.xlsx";
+        String outputFile = outputFolder + File.separator + "Glycans-" + new Date() + ".xlsx";
         FileOutputStream os = new FileOutputStream(outputFile);
         workbook.write(os);
         os.close();
