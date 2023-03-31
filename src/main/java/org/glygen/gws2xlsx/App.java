@@ -193,8 +193,7 @@ public class App {
         }
         
         // output folder
-        if (arguments.getOutputFolder() != null)
-        {
+        if (arguments.getOutputFolder() != null) {
             File t_file = new File(arguments.getOutputFolder());
             if (!t_file.exists())
             {
@@ -204,9 +203,14 @@ public class App {
                     t_valid = false;
                 }
             }
-        }
-        else
-        {
+        } else if (arguments.getInputFolder() != null) {
+            arguments.setOutputFolder(arguments.getInputFolder());
+            File t_file = new File(arguments.getOutputFolder());
+            if (!t_file.exists()) {
+                System.out.println("Unable to find output folder.");
+                t_valid = false;
+            }
+        } else {
             System.out.println("Output folder (-o) is missing.");
             t_valid = false;
         }

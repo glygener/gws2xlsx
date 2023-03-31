@@ -271,10 +271,15 @@ public class GlytoucanRegistryApp {
         cell = header.createCell(columnCount++, CellType.STRING);
         cell.setCellValue("Contributor");
         cell.setCellStyle(cellStyleHeadline);
+        cell = header.createCell(columnCount++, CellType.STRING);
+        cell.setCellValue("Experimental technique");
+        cell.setCellStyle(cellStyleHeadline);
         
-        int maxImageWidth = determineMaxColumnWidth (processed);
+        
+        int maxImageWidth = determineMaxColumnWidth (processed, false);
+        int maxImageWidth2 = determineMaxColumnWidth (processed, false);
         sheet.setColumnWidth(3, (int) (maxImageWidth * IMAGE_CELL_WIDTH_FACTOR));
-        sheet.setColumnWidth(4, (int) (maxImageWidth * IMAGE_CELL_WIDTH_FACTOR));
+        sheet.setColumnWidth(4, (int) (maxImageWidth2 * IMAGE_CELL_WIDTH_FACTOR));
         int row = 1;
         for (InputFile file: processed.getFiles()) {
             String filename = file.getFilename().substring(file.getFilename().lastIndexOf(File.separator)+1);
@@ -331,14 +336,15 @@ public class GlytoucanRegistryApp {
                 cell = r.createCell(columnCount++, CellType.STRING);
                 cell = r.createCell(columnCount++, CellType.STRING);
                 cell.setCellValue("createdBy:Mindy Porterfield(mindyp@ccrc.uga.edu, CCRC)");
+                cell = r.createCell(columnCount++, CellType.STRING);
             }
         }
         
         sheet.autoSizeColumn(0);
         sheet.autoSizeColumn(1);
         sheet.autoSizeColumn(2);
-        sheet.autoSizeColumn(4);
         sheet.autoSizeColumn(5);
+        sheet.autoSizeColumn(6);
         
         String outputFile = outputFolder + File.separator + "Glycans-" + new Date() + ".xlsx";
         FileOutputStream os = new FileOutputStream(outputFile);
@@ -347,12 +353,19 @@ public class GlytoucanRegistryApp {
         workbook.close();
     }
 
-    private int determineMaxColumnWidth(JobObject processed) throws IOException {
+    private int determineMaxColumnWidth(JobObject processed, boolean glytoucanImage) throws IOException {
         Integer maxImageWidth = 100;
         for (InputFile file: processed.getFiles()) {
             for (GlycanObject glycan: file.getGlycans()) {
+                if (glytoucanImage && glycan.getGlytoucanImage() != null) {
+                    InputStream is = new ByteArrayInputStream(glycan.getGlytoucanImage());
+                    BufferedImage newBi = ImageIO.read(is);
+                    if (newBi.getWidth() > maxImageWidth) {
+                        maxImageWidth = newBi.getWidth();
+                    }
+                }
              // convert byte[] back to a BufferedImage
-                if (glycan.getCartoon() != null) {
+                else if (glycan.getCartoon() != null) {
                     InputStream is = new ByteArrayInputStream(glycan.getCartoon());
                     BufferedImage newBi = ImageIO.read(is);
                     if (newBi.getWidth() > maxImageWidth) {
