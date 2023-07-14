@@ -257,7 +257,7 @@ public class App {
  
         t_option = new Option("o", "output", true, "Output folder for the excel file and job files");
         t_option.setArgs(1);
-        t_option.setRequired(true);
+        t_option.setRequired(false);
         t_options.addOption(t_option);
         
         t_option = new Option("j", "job", true, "Run using previous job.");
