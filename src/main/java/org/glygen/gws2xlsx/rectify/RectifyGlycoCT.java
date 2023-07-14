@@ -15,8 +15,11 @@ public class RectifyGlycoCT
 		Sugar t_sugar = t_importer.parse(a_glycoCT);
 		
 		// fix the issues
-		GlycoVisitorRectifyFuc1d t_visitor = new GlycoVisitorRectifyFuc1d();
-		t_visitor.start(t_sugar);
+		GlycoVisitorRectifyFuc1d t_visitorFuc = new GlycoVisitorRectifyFuc1d();
+		t_visitorFuc.start(t_sugar);
+		
+		GlycoVisitorRectifyUNDparents t_visitorUND = new GlycoVisitorRectifyUNDparents();
+		t_visitorUND.start(t_sugar);
 		
 		// export back to GlycoCT
 		SugarExporterGlycoCTCondensed t_exporter = new SugarExporterGlycoCTCondensed();
