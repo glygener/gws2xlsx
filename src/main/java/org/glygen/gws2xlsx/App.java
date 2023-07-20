@@ -58,7 +58,7 @@ public class App {
             job = registry.processInputFolder(arguments.getInputFolder(), arguments.getGlytoucanGeneration(), arguments.getCartoonGeneration(), arguments.getDebug());
         } else if (arguments.getJobFile() != null) {
             try {
-                job = registry.processJobFile(arguments.getJobFile(), arguments.getGlytoucanGeneration(), arguments.getCartoonGeneration());
+                job = registry.processJobFile(arguments.getJobFile(), arguments.getGlytoucanGeneration(), arguments.getCartoonGeneration(), arguments.getRerun());
             } catch (JsonProcessingException | FileNotFoundException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
@@ -125,6 +125,7 @@ public class App {
         arguments.setGlytoucanGeneration(commandLine.hasOption("g"));
         arguments.setCartoonGeneration(commandLine.hasOption("c"));
         arguments.setDebug(commandLine.hasOption("i"));
+        arguments.setRerun(commandLine.hasOption("r"));
         // check settings
         if (!App.checkArguments(arguments))
         {
@@ -249,7 +250,7 @@ public class App {
         t_option.setRequired(false);
         t_options.addOption(t_option);
         
-        t_option = new Option("i", "debug", false, "generate debug information");
+        t_option = new Option("i", "debug", false, "Generate debug information");
         t_option.setArgs(0);
         t_option.setRequired(false);
         t_options.addOption(t_option);
@@ -262,6 +263,11 @@ public class App {
         
         t_option = new Option("j", "job", true, "Run using previous job.");
         t_option.setArgs(1);
+        t_option.setRequired(false);
+        t_options.addOption(t_option);
+        
+        t_option = new Option("r", "rerun", true, "Regenerate all WURCS sequences and assigned Glytoucan ids");
+        t_option.setArgs(0);
         t_option.setRequired(false);
         t_options.addOption(t_option);
         return t_options;

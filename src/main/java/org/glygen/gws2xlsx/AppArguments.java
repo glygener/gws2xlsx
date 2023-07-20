@@ -9,6 +9,7 @@ public class AppArguments {
     Boolean cartoonGeneration;
     Boolean glytoucanGeneration;
     Boolean debug;
+    Boolean rerun;
     /**
      * @return the gwsFile
      */
@@ -93,6 +94,21 @@ public class AppArguments {
     public void setDebug(Boolean debug) {
         this.debug = debug;
     }
+   
+    /**
+     * 
+     * @param rerun
+     */
+    public void setRerun(boolean rerun) {
+       this.rerun = rerun;
+        
+    }
     
-    
+    /**
+     * 
+     * @return the rerun flag
+     */
+    public Boolean getRerun() {
+        return rerun;
+    }   
 }

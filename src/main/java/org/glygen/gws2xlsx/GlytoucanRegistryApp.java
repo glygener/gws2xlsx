@@ -1,7 +1,5 @@
 package org.glygen.gws2xlsx;
 
-import java.awt.Graphics2D;
-import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -152,7 +150,7 @@ public class GlytoucanRegistryApp {
         return job;
     }
     
-    public JobObject processJobFile (String jobFile, Boolean glytoucanGeneration, Boolean cartoonGeneration) throws FileNotFoundException, JsonMappingException, JsonProcessingException {
+    public JobObject processJobFile (String jobFile, Boolean glytoucanGeneration, Boolean cartoonGeneration, Boolean rerun) throws FileNotFoundException, JsonMappingException, JsonProcessingException {
         // read json object from file
         Scanner scanner = new Scanner (new File(jobFile));
         String json = scanner.nextLine();
@@ -165,6 +163,36 @@ public class GlytoucanRegistryApp {
             for (GlycanObject glycan: file.getGlycans()) {
                 try {
                     if (glytoucanGeneration) {
+                        if (rerun) {
+                            System.out.println("Rerun");
+                            String existingWurcs = glycan.getWurcs();
+                            SequenceUtil.parseGWSIntoWURCS(glycan);
+                            String wurcs = glycan.getWurcs();
+                            if (existingWurcs != null && !existingWurcs.equals(wurcs)) {
+                                System.out.println("WURCS has changed for row " + glycan.getRowNumber());
+                                // even if there is a glytoucan id, retrieve it again
+                                String errors = GlytoucanUtil.getInstance().validateGlycan(glycan.getWurcs());
+                                if (errors != null) {
+                                    glycan.setError("Validation errors: " + errors);
+                                    glycan.setStatus(RegistrationStatus.ERROR);
+                                    continue;
+                                }
+                                String glytoucanId = GlytoucanUtil.getInstance().getAccessionNumber(glycan.getWurcs());
+                                if (glytoucanId == null) {
+                                    glycan.setStatus(RegistrationStatus.NEWLY_REGISTERED);
+                                    glytoucanId = GlytoucanUtil.getInstance().registerGlycan(glycan.getWurcs());
+                                    if (glytoucanId == null || glytoucanId.length() > 10) {
+                                        glycan.setStatus(RegistrationStatus.NEWLY_SUBMITTED_FOR_REGISTRATION);
+                                        glycan.setGlytoucanHash(glytoucanId);
+                                    } else {
+                                        glycan.setGlytoucanID(glytoucanId);
+                                    }
+                                } else {
+                                    glycan.setStatus(RegistrationStatus.ALREADY_IN_GLYTOUCAN);
+                                    glycan.setGlytoucanID(glytoucanId);
+                                }
+                            } 
+                        }
                         if (glycan.getGlytoucanID() == null || glycan.getStatus() == RegistrationStatus.NEWLY_SUBMITTED_FOR_REGISTRATION) {
                             if (glycan.getWurcs() == null) {
                                 SequenceUtil.parseGWSIntoWURCS(glycan);
@@ -319,15 +347,11 @@ public class GlytoucanRegistryApp {
                 cell.setCellValue(glycan.getGlytoucanID());
                 cell.setCellStyle(cellStyleTextMiddle);
                 cell = r.createCell(3, CellType.BLANK);
-                Integer imageWidth = null;
-                Integer imageHeight = null;
                 Float rowHeightinPixels = null;
                 if (glycan.getCartoon() != null) {
                     // convert byte[] back to a BufferedImage
                     InputStream is = new ByteArrayInputStream(glycan.getCartoon());
                     BufferedImage newBi = ImageIO.read(is);
-                    imageWidth = newBi.getWidth();
-                    imageHeight = newBi.getHeight();
                     r.setHeightInPoints((int) (newBi.getHeight() * IMAGE_CELL_HEIGHT_FACTOR));
                     rowHeightinPixels = r.getHeightInPoints() * Units.PIXEL_DPI / Units.POINT_DPI;
                     addCartoon (drawing, workbook, cell, glycan.getCartoon(), sheet.getColumnWidthInPixels(3), rowHeightinPixels);
@@ -335,21 +359,7 @@ public class GlytoucanRegistryApp {
                 cell = r.createCell(4, CellType.BLANK);
                 if (glycan.getGlytoucanImage() != null) {
                     InputStream is = new ByteArrayInputStream(glycan.getGlytoucanImage());
-                    BufferedImage newBi = null;
-                    if (imageWidth != null) {
-                        /*System.out.println("width = " + imageWidth + " height=" + imageHeight);
-                        
-                        Image newImg = ImageIO.read(is).getScaledInstance(imageWidth, imageHeight,Image.SCALE_AREA_AVERAGING);
-                        newBi = new BufferedImage(newImg.getWidth(null), newImg.getHeight(null), BufferedImage.TYPE_INT_ARGB);
-                        // Draw the image on to the buffered image
-                        Graphics2D bGr = newBi.createGraphics();
-                        bGr.drawImage(newImg, 0, 0, null);
-                        bGr.dispose();*/
-                        newBi = ImageIO.read(is);
-                    } else {
-                        newBi = ImageIO.read(is);
-                    }
-                    //System.out.println("glytoucan image width = " + newBi.getWidth() + " glytoucan image height=" + newBi.getHeight());
+                    BufferedImage newBi = ImageIO.read(is);
                     r.setHeightInPoints((int) (newBi.getHeight() * IMAGE_CELL_HEIGHT_FACTOR));
                     float rowHeight = rowHeightinPixels != null ? rowHeightinPixels : r.getHeightInPoints() * Units.PIXEL_DPI / Units.POINT_DPI;
                     addCartoon (drawing, workbook, cell, glycan.getGlytoucanImage(), sheet.getColumnWidthInPixels(3), rowHeight);
