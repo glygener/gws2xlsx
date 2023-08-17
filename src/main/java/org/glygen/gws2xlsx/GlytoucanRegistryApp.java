@@ -391,7 +391,7 @@ public class GlytoucanRegistryApp {
                 cell = r.createCell(columnCount++, CellType.STRING);
                 cell = r.createCell(columnCount++, CellType.STRING);
                 cell = r.createCell(columnCount++, CellType.STRING);
-                cell.setCellValue("createdBy:Mindy Porterfield(mindyp@ccrc.uga.edu, CCRC)");
+                cell.setCellValue("createdBy:Mindy Porterfield(mindyp@ccrc.uga.edu, CCRC)|createdBy:Anh Nguyen(apnguyen@gwu.edu,The George Washington University)");
                 cell = r.createCell(columnCount++, CellType.STRING);
             }
         }
