@@ -295,10 +295,13 @@ public class GlytoucanRegistryApp {
         } 
         
         cell = header.createCell(columnCount++, CellType.STRING);
-        cell.setCellValue("Paper");
+        cell.setCellValue("Evidence");
         cell.setCellStyle(cellStyleHeadline);
         cell = header.createCell(columnCount++, CellType.STRING);
         cell.setCellValue("Species");
+        cell.setCellStyle(cellStyleHeadline);
+        cell = header.createCell(columnCount++, CellType.STRING);
+        cell.setCellValue("Strain");
         cell.setCellStyle(cellStyleHeadline);
         cell = header.createCell(columnCount++, CellType.STRING);
         cell.setCellValue("Tissue");
@@ -310,6 +313,9 @@ public class GlytoucanRegistryApp {
         cell.setCellValue("Disease");
         cell.setCellStyle(cellStyleHeadline);
         cell = header.createCell(columnCount++, CellType.STRING);
+        cell.setCellValue("Glycan dictionary term ID");
+        cell.setCellStyle(cellStyleHeadline);
+        cell = header.createCell(columnCount++, CellType.STRING);
         cell.setCellValue("has_abundance");
         cell.setCellStyle(cellStyleHeadline);
         cell = header.createCell(columnCount++, CellType.STRING);
@@ -319,13 +325,19 @@ public class GlytoucanRegistryApp {
         cell.setCellValue("Functional annotation/Keyword");
         cell.setCellStyle(cellStyleHeadline);
         cell = header.createCell(columnCount++, CellType.STRING);
-        cell.setCellValue("Glycan dictionary term ID");
+        cell.setCellValue("Experimental technique");
+        cell.setCellStyle(cellStyleHeadline);
+        cell = header.createCell(columnCount++, CellType.STRING);
+        cell.setCellValue("Variant (Fly, yeast, mouse)");
+        cell.setCellStyle(cellStyleHeadline);
+        cell = header.createCell(columnCount++, CellType.STRING);
+        cell.setCellValue("Organismal/cellular Phenotype");
+        cell.setCellStyle(cellStyleHeadline);
+        cell = header.createCell(columnCount++, CellType.STRING);
+        cell.setCellValue("Molecular Phenotype");
         cell.setCellStyle(cellStyleHeadline);
         cell = header.createCell(columnCount++, CellType.STRING);
         cell.setCellValue("Contributor");
-        cell.setCellStyle(cellStyleHeadline);
-        cell = header.createCell(columnCount++, CellType.STRING);
-        cell.setCellValue("Experimental technique");
         cell.setCellStyle(cellStyleHeadline);
         
         
@@ -385,14 +397,18 @@ public class GlytoucanRegistryApp {
                 cell = r.createCell(columnCount++, CellType.STRING);
                 cell = r.createCell(columnCount++, CellType.STRING);
                 cell = r.createCell(columnCount++, CellType.STRING);
+                cell = r.createCell(columnCount++, CellType.STRING);
+                cell = r.createCell(columnCount++, CellType.STRING);
                 cell.setCellValue("no");
                 cell = r.createCell(columnCount++, CellType.STRING);
                 cell.setCellValue("no");
+                cell = r.createCell(columnCount++, CellType.STRING);
+                cell = r.createCell(columnCount++, CellType.STRING);
+                cell = r.createCell(columnCount++, CellType.STRING);
                 cell = r.createCell(columnCount++, CellType.STRING);
                 cell = r.createCell(columnCount++, CellType.STRING);
                 cell = r.createCell(columnCount++, CellType.STRING);
                 cell.setCellValue("createdBy:Mindy Porterfield(mindyp@ccrc.uga.edu, CCRC)|createdBy:Anh Nguyen(apnguyen@gwu.edu,The George Washington University)");
-                cell = r.createCell(columnCount++, CellType.STRING);
             }
         }
         
