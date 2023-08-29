@@ -419,6 +419,10 @@ public class GlytoucanRegistryApp {
         sheet.autoSizeColumn(6);
         
         String outputFile = outputFolder + File.separator + "Glycans-" + new SimpleDateFormat("yyyyMMdd'T'hh_mm").format(new Date()) + ".xlsx";
+        if (processed.getFiles().size() == 1) {
+            String filename = processed.getFiles().get(0).getFilename().substring (processed.getFiles().get(0).getFilename().lastIndexOf(File.separator)+1);
+            outputFile = outputFolder + File.separator + "Glycans-" + filename.replaceAll(" ",  "") + "-" + new SimpleDateFormat("yyyyMMdd'T'hh_mm").format(new Date()) + ".xlsx";
+        }
         FileOutputStream os = new FileOutputStream(outputFile);
         workbook.write(os);
         os.close();
